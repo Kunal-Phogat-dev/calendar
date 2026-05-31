@@ -533,6 +533,11 @@ function renderCalendar() {
     grid.appendChild(cell);
     cellIndex++;
   }
+
+  const today = document.querySelector('.cal-cell.today');
+  if (today) {
+    today.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 }
 
 let monthTransitionTimer = null;

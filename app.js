@@ -9,6 +9,7 @@ const state = {
   reminders: {},       // key: "YYYY-MM-DD", value: [ {id, text, cat, time, recurring} ]
   recurring: [],       // [ {id, text, cat, time} ] — show every day
   todos: [],           // [ {id, text, done} ]
+  events: [],          // [ {id, text, start, end} ]
   editingId: null,
   accent: 'amber',     // 'amber' | 'teal'
 };
@@ -66,6 +67,8 @@ const glowTextSelector = [
   '.todo-add-toggle',
   '.todo-save',
   '.todo-input',
+  '.date-input',
+  '.event-bar',
   '.btn-cancel',
   '.btn-save',
   '.toast'
@@ -130,6 +133,7 @@ function save() {
   localStorage.setItem('cal_reminders', JSON.stringify(state.reminders));
   localStorage.setItem('cal_recurring', JSON.stringify(state.recurring));
   localStorage.setItem('cal_todos', JSON.stringify(state.todos));
+  localStorage.setItem('cal_events', JSON.stringify(state.events));
   localStorage.setItem('cal_accent', state.accent);
 }
 
@@ -138,10 +142,12 @@ function load() {
     const r = localStorage.getItem('cal_reminders');
     const rec = localStorage.getItem('cal_recurring');
     const todos = localStorage.getItem('cal_todos');
+    const events = localStorage.getItem('cal_events');
     const acc = localStorage.getItem('cal_accent');
     if (r) state.reminders = JSON.parse(r);
     if (rec) state.recurring = JSON.parse(rec);
     if (todos) state.todos = JSON.parse(todos);
+    if (events) state.events = JSON.parse(events);
     if (acc) state.accent = acc;
   } catch(e) {}
 }
@@ -581,9 +587,32 @@ function buildCell(day, otherMonth, isToday, isWeekend, key, date) {
   if (!otherMonth && key) {
     const reminders = state.reminders[key] || [];
     const recurring  = state.recurring;
+    const dayEvents = getEventsForDate(key);
 
     const allDots = [...reminders, ...recurring];
-    if (allDots.length > 0) {
+    if (dayEvents.length > 0) {
+      const barsWrap = document.createElement('div');
+      barsWrap.className = 'event-bars';
+      dayEvents.slice(0, 2).forEach(event => {
+        const bar = document.createElement('div');
+        const starts = key === event.start;
+        const ends = key === event.end;
+        const showTitle = starts || date.getDay() === 0;
+        bar.className = 'event-bar' +
+          (starts ? ' starts' : ' continues') +
+          (ends ? ' ends' : '');
+        bar.textContent = showTitle ? event.text : '';
+        bar.title = `${event.text}: ${formatNotificationDate(event.start, false)} - ${formatNotificationDate(event.end, false)}`;
+        barsWrap.appendChild(bar);
+      });
+      if (dayEvents.length > 2) {
+        const more = document.createElement('div');
+        more.className = 'event-more';
+        more.textContent = `+${dayEvents.length - 2} more`;
+        barsWrap.appendChild(more);
+      }
+      cell.appendChild(barsWrap);
+    } else if (allDots.length > 0) {
       const dotsWrap = document.createElement('div');
       dotsWrap.className = 'cell-dots';
       const shown = allDots.slice(0, 5);
@@ -606,6 +635,12 @@ function buildCell(day, otherMonth, isToday, isWeekend, key, date) {
   return cell;
 }
 
+function getEventsForDate(key) {
+  return state.events
+    .filter(event => key >= event.start && key <= event.end)
+    .sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end));
+}
+
 // ── Modal ────────────────────────────────────────────
 let selectedCat = null;
 let modalEntryType = 'reminder';
@@ -613,11 +648,13 @@ let modalEntryType = 'reminder';
 function setModalEntryType(type) {
   modalEntryType = type;
   const isTodo = type === 'todo';
+  const isEvent = type === 'event';
 
   $('modal').classList.toggle('todo-mode', isTodo);
-  $('modal-title').textContent = isTodo ? 'Add to-do' : 'Add reminder';
-  $('reminder-text').placeholder = isTodo ? 'What do you need to do?' : 'What do you need to remember?';
-  $('btn-save').textContent = isTodo ? 'Save to-do' : 'Save reminder';
+  $('modal').classList.toggle('event-mode', isEvent);
+  $('modal-title').textContent = isEvent ? 'Add event' : isTodo ? 'Add to-do' : 'Add reminder';
+  $('reminder-text').placeholder = isEvent ? 'Event name' : isTodo ? 'What do you need to do?' : 'What do you need to remember?';
+  $('btn-save').textContent = isEvent ? 'Save event' : isTodo ? 'Save to-do' : 'Save reminder';
 
   document.querySelectorAll('.modal-type-tab').forEach(tab => {
     const isActive = tab.dataset.entryType === type;
@@ -635,6 +672,8 @@ function openModal(date, key) {
 
   $('reminder-text').value = '';
   $('reminder-time').value = '';
+  $('event-start').value = key;
+  $('event-end').value = key;
   $('recurring-toggle').checked = false;
   $('recurring-label').textContent = 'Off';
   $('recurring-label').classList.remove('on');
@@ -667,6 +706,24 @@ function saveReminder() {
     renderAll();
     setTodayPanelTab('todos');
     showToast('To-do added');
+    return;
+  }
+
+  if (modalEntryType === 'event') {
+    const start = $('event-start').value;
+    const end = $('event-end').value;
+    if (!start || !end || end < start) {
+      $('event-end').focus();
+      $('event-end').style.borderColor = '#ef4444';
+      setTimeout(() => $('event-end').style.borderColor = '', 800);
+      return;
+    }
+
+    state.events.push({ id: uid(), text, start, end });
+    save();
+    closeModal();
+    renderAll();
+    showToast(start === end ? 'Event saved' : 'Multi-day event saved');
     return;
   }
 

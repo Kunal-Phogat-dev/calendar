@@ -44,9 +44,21 @@
         <div class="modal-type-tabs" role="tablist" aria-label="Entry type">
           <button type="button" class="modal-type-tab active" data-entry-type="reminder" aria-selected="true">Reminder</button>
           <button type="button" class="modal-type-tab" data-entry-type="todo" aria-selected="false">To-do</button>
+          <button type="button" class="modal-type-tab" data-entry-type="event" aria-selected="false">Event</button>
         </div>
 
         <input type="text" id="reminder-text" class="reminder-input" placeholder="What do you need to remember?" maxlength="120" />
+
+        <div class="event-meta" id="event-meta">
+          <div class="meta-group">
+            <label class="meta-label">Starts</label>
+            <input type="date" id="event-start" class="date-input" />
+          </div>
+          <div class="meta-group">
+            <label class="meta-label">Ends</label>
+            <input type="date" id="event-end" class="date-input" />
+          </div>
+        </div>
 
         <div class="reminder-meta" id="reminder-meta">
           <div class="meta-group">

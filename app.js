@@ -4,7 +4,7 @@
 // ── State ──────────────────────────────────────────
 const state = {
   today: new Date(),
-  viewing: new Date(),
+  viewing: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   selectedDate: null,
   reminders: {},       // key: "YYYY-MM-DD", value: [ {id, text, cat, time, recurring} ]
   recurring: [],       // [ {id, text, cat, time} ] — show every day
@@ -556,7 +556,7 @@ function changeMonth(offset) {
   calendar.classList.add('month-dissolving');
 
   monthTransitionTimer = setTimeout(() => {
-    state.viewing.setMonth(state.viewing.getMonth() + offset);
+    state.viewing = new Date(state.viewing.getFullYear(), state.viewing.getMonth() + offset, 1);
     renderCalendar();
     attachCellCursorGlow();
 

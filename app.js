@@ -535,6 +535,30 @@ function renderCalendar() {
   }
 }
 
+let monthTransitionTimer = null;
+
+function changeMonth(offset) {
+  const calendar = document.querySelector('.calendar-main');
+  if (monthTransitionTimer) clearTimeout(monthTransitionTimer);
+
+  calendar.classList.remove('month-revealing');
+  calendar.classList.add('month-dissolving');
+
+  monthTransitionTimer = setTimeout(() => {
+    state.viewing.setMonth(state.viewing.getMonth() + offset);
+    renderCalendar();
+    attachCellCursorGlow();
+
+    calendar.classList.remove('month-dissolving');
+    calendar.classList.add('month-revealing');
+
+    monthTransitionTimer = setTimeout(() => {
+      calendar.classList.remove('month-revealing');
+      monthTransitionTimer = null;
+    }, 360);
+  }, 220);
+}
+
 function buildCell(day, otherMonth, isToday, isWeekend, key, date) {
   const cell = document.createElement('div');
   cell.className = 'cal-cell' +
@@ -705,12 +729,10 @@ $('reminder-text').addEventListener('keydown', (e) => {
 
 // ── Navigation ───────────────────────────────────────
 $('prev-btn').addEventListener('click', () => {
-  state.viewing.setMonth(state.viewing.getMonth() - 1);
-  renderCalendar();
+  changeMonth(-1);
 });
 $('next-btn').addEventListener('click', () => {
-  state.viewing.setMonth(state.viewing.getMonth() + 1);
-  renderCalendar();
+  changeMonth(1);
 });
 
 // ── Mobile view switch ───────────────────────────────

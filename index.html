@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cal — Your Personal Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="cursor-glow" id="cursor-glow" aria-hidden="true"></div>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <div class="notification-panel" id="notification-panel" aria-hidden="true">
+    <div class="notification-panel-header">
+      <div>
+        <div class="notification-label">Notifications</div>
+        <div class="notification-status" id="notification-status"></div>
+      </div>
+      <button type="button" class="notification-enable" id="notification-enable">Enable</button>
+    </div>
+    <div class="notification-list" id="notification-list"></div>
+  </div>
+
+  <!-- Reminder modal -->
+  <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-date-label" id="modal-date-label"></div>
+          <h2 class="modal-title" id="modal-title">Add reminder</h2>
+        </div>
+        <button class="modal-close" id="modal-close" aria-label="Close modal">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M14 4L4 14M4 4l10 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-type-tabs" role="tablist" aria-label="Entry type">
+          <button type="button" class="modal-type-tab active" data-entry-type="reminder" aria-selected="true">Reminder</button>
+          <button type="button" class="modal-type-tab" data-entry-type="todo" aria-selected="false">To-do</button>
+        </div>
+
+        <input type="text" id="reminder-text" class="reminder-input" placeholder="What do you need to remember?" maxlength="120" />
+
+        <div class="reminder-meta" id="reminder-meta">
+          <div class="meta-group">
+            <label class="meta-label">Category</label>
+            <div class="cat-pills" id="cat-pills">
+              <button type="button" class="cat-pill" data-cat="work">Work</button>
+              <button type="button" class="cat-pill" data-cat="health">Health</button>
+              <button type="button" class="cat-pill" data-cat="personal">Personal</button>
+            </div>
+          </div>
+
+          <div class="meta-group">
+            <label class="meta-label">Time</label>
+            <input type="time" id="reminder-time" class="time-input" />
+          </div>
+
+          <div class="meta-group recurring-group">
+            <label class="meta-label">Recurring</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="recurring-toggle" />
+              <span class="toggle-track"></span>
+            </label>
+            <span class="recurring-label" id="recurring-label">Off</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" id="btn-cancel">Cancel</button>
+        <button type="button" class="btn-save" id="btn-save">Save reminder</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app mobile-show-calendar" id="app">
+
+    <div class="mobile-view-switch" aria-label="Mobile view selector">
+      <button type="button" class="mobile-view-btn active" data-mobile-view="calendar" aria-pressed="true">Calendar</button>
+      <button type="button" class="mobile-view-btn" data-mobile-view="today" aria-pressed="false">Today</button>
+    </div>
+
+    <!-- Today panel -->
+    <aside class="today-panel" id="today-panel">
+      <div class="today-header">
+        <div>
+          <div class="today-day" id="today-day"></div>
+          <div class="today-full" id="today-full"></div>
+        </div>
+        <div class="today-actions">
+          <button class="notification-toggle" id="notification-toggle" title="Show notifications" aria-label="Show notifications" aria-expanded="false">
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M13.5 7.25a5.5 5.5 0 0 0-11 0c0 3.5-1.5 4.5-1.5 4.5h14s-1.5-1-1.5-4.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.25 14a1.75 1.75 0 0 0 3.5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+          <button class="accent-toggle" id="accent-toggle" title="Switch accent color">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="today-tabs" role="tablist" aria-label="Today panel sections">
+        <button type="button" class="today-tab active" data-panel-tab="reminders" role="tab" aria-selected="true">Reminders</button>
+        <button type="button" class="today-tab" data-panel-tab="todos" role="tab" aria-selected="false">To-do</button>
+      </div>
+
+      <div class="today-panel-view active" id="reminders-panel" data-panel-view="reminders">
+        <div class="today-tasks-section">
+          <div class="section-label">Today's reminders</div>
+          <div class="today-tasks" id="today-tasks">
+            <div class="empty-today">Nothing scheduled — enjoy the calm.</div>
+          </div>
+        </div>
+
+        <div class="today-tasks-section" id="recurring-section">
+          <div class="section-label">Daily recurring</div>
+          <div class="today-tasks" id="recurring-tasks">
+            <div class="empty-today">No recurring reminders.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="today-panel-view" id="todos-panel" data-panel-view="todos">
+        <div class="todo-header">
+          <div class="section-label">To-do list</div>
+          <button type="button" class="todo-add-toggle" id="todo-add-toggle" aria-expanded="false">Add</button>
+        </div>
+
+        <div class="todo-add-form" id="todo-add-form" aria-hidden="true">
+          <input type="text" id="todo-input" class="todo-input" placeholder="Add a task" maxlength="100" />
+          <button type="button" class="todo-save" id="todo-save">Save</button>
+        </div>
+
+        <div class="today-tasks" id="todo-list">
+          <div class="empty-today">No to-do items yet.</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main calendar -->
+    <main class="calendar-main">
+      <header class="cal-header">
+        <button class="nav-btn" id="prev-btn" aria-label="Previous month">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L6 9l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="cal-title-wrap">
+          <h1 class="cal-month" id="cal-month"></h1>
+          <span class="cal-year" id="cal-year"></span>
+        </div>
+        <button class="nav-btn" id="next-btn" aria-label="Next month">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M7 4l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
+
+      <div class="weekdays" aria-hidden="true">
+        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span>
+        <span>Thu</span><span>Fri</span><span>Sat</span>
+      </div>
+
+      <div class="cal-grid" id="cal-grid" role="grid" aria-label="Calendar"></div>
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
